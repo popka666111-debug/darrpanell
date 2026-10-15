@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DARR PANELL</title>
+    <!-- Подключаем API Telegram -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Подключаем хакерский шрифт -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --main-color: #00ff41; /* Неоновый зеленый */
+            --bg-color: #030303;   /* Глубокий черный */
+            --panel-bg: #0a0a0a;
+            --alert-color: #ff003c; /* Неоновый красный для кнопки */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--main-color);
+            font-family: 'Share Tech Mono', monospace;
+            padding: 15px;
+            overflow-x: hidden;
+            /* Фон в виде мелкой сетки */
+            background-image: 
+                linear-gradient(rgba(0, 255, 65, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Эффект старого пузатого монитора (CRT) и полос экрана */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            z-index: 3;
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Заголовок с глитчем */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--main-color);
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        .glitch {
+            font-size: 2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-shadow: 0 0 5px var(--main-color);
+            animation: glitch 1.5s infinite;
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 var(--alert-color), -2px 0 #0ff; }
+            20% { text-shadow: -2px 0 var(--alert-color), 2px 0 #0ff; }
+            40% { text-shadow: 2px 0 var(--alert-color), -2px 0 #0ff; }
+            60% { text-shadow: -2px 0 var(--alert-color), 2px 0 #0ff; }
+            80% { text-shadow: 2px 0 var(--alert-color), -2px 0 #0ff; }
+            100% { text-shadow: -2px 0 var(--alert-color), 2px 0 #0ff; }
+        }
+
+        /* Плашка со статусами сети */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #888;
+            border: 1px solid #333;
+            padding: 10px;
+            background: var(--panel-bg);
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
+        }
+
+        .stats-bar span {
+            color: var(--main-color);
+        }
+
+        /* Окно терминала */
+        .terminal-log {
+            background: #000;
+            border: 1px solid #333;
+            border-left: 3px solid #666;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #666;
+            height: 90px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .log-success { color: var(--main-color); }
+        .log-wait { color: #ffeb3b; }
+        .log-err { color: var(--alert-color); }
+
+        /* Карточки аккаунтов */
+        .account-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .account-card {
+            background: var(--panel-bg);
+            border: 1px solid #222;
+            border-left: 4px solid var(--main-color);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Пробегающий блик по карточке */
+        .account-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+            animation: scan 3s infinite linear;
+        }
+
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .acc-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .acc-phone {
+            font-size: 1.1rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 0 3px var(--main-color);
+        }
+
+        .acc-status {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .acc-status.online { 
+            color: var(--main-color); 
+        }
+
+        /* Главная кнопка запуска */
+        .cyber-btn {
+            background: rgba(0, 255, 65, 0.05);
+            color: var(--main-color);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.3rem;
+            padding: 18px;
+            border: 2px solid var(--main-color);
+            cursor: pointer;
+            text-transform: uppercase;
+            position: relative;
+            transition: 0.3s;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            margin-top: 10px;
+        }
+
+        .cyber-btn:hover {
+            background: rgba(0, 255, 65, 0.15);
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.5);
+        }
+
+        .cyber-btn:active {
+            background: var(--main-color);
+            color: #000;
+        }
+
+        /* Состояние при нажатии (боевой режим) */
+        .cyber-btn.processing {
+            border-color: var(--alert-color);
+            color: var(--alert-color);
+            background: rgba(255, 0, 60, 0.05);
+            box-shadow: 0 0 25px rgba(255, 0, 60, 0.5);
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 10px var(--alert-color); }
+            50% { box-shadow: 0 0 30px var(--alert-color); }
+            100% { box-shadow: 0 0 10px var(--alert-color); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <!-- Заголовок -->
+        <div class="header">
+            <div class="glitch">DARR PANELL v2.0</div>
+            <p style="font-size: 0.8rem; margin-top: 5px; color: #555;">// SECURE CONNECTION ESTABLISHED //</p>
+        </div>
+
+        <!-- Статистика -->
+        <div class="stats-bar">
+            <div>PING: <span>12ms</span></div>
+            <div>PROXY: <span>SECURE</span></div>
+            <div>NODES: <span>ONLINE</span></div>
+        </div>
+
+        <!-- Окно терминала -->
+        <div class="terminal-log" id="termLog">
+            <p>> System initialized...</p>
+            <p>> Awaiting user command...</p>
+        </div>
+
+        <!-- Карточки аккаунтов (пока визуальные примеры) -->
+        <div class="account-list">
+            <div class="account-card">
+                <div class="acc-info">
+                    <div class="acc-phone">+7 (999) ***-**-01</div>
+                    <div class="acc-status online">> SESSION: ACTIVE</div>
+                </div>
+            </div>
+            <div class="account-card">
+                <div class="acc-info">
+                    <div class="acc-phone">+7 (999) ***-**-02</div>
+                    <div class="acc-status online">> SESSION: ACTIVE</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопка активации -->
+        <button class="cyber-btn" id="massLikeBtn">
+            [ START MASS-LIKE ]
+        </button>
+        
+    </div>
+
+    <script>
+        // Подключаем Telegram API
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.backgroundColor = "#030303";
+        tg.headerColor = "#030303";
+
+        const btn = document.getElementById('massLikeBtn');
+        const log = document.getElementById('termLog');
+
+        // Функция добавления текста в терминал
+        function addLog(msg, type="") {
+            const p = document.createElement('p');
+            p.innerHTML = `> ${msg}`;
+            if(type) p.className = type;
+            log.appendChild(p);
+            log.scrollTop = log.scrollHeight; // автоскролл вниз
+        }
+
+        btn.addEventListener('click', function() {
+            // Защита от двойного клика
+            if (this.classList.contains('processing')) return;
+
+            // Меняем дизайн кнопки на красный
+            this.innerHTML = "[ EXECUTING PROTOCOL... ]";
+            this.classList.add('processing');
+            
+            // Пишем красивые логи в терминал
+            addLog('Initiating mass-like protocol...', 'log-wait');
+            
+            setTimeout(() => {
+                addLog('Bypassing security layers...');
+            }, 400);
+
+            setTimeout(() => {
+                addLog('Payload sent to server. Closing interface...', 'log-success');
+                
+                // Отправляем сигнал боту в Python!
+                let data = JSON.stringify({action: "mass_like"});
+                tg.sendData(data); 
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
